@@ -1,0 +1,22 @@
+default_commands:
+  help:
+    enabled: 1
+  roles:
+    - create_role
+    - role
+    - remove_role
+    - roles
+    - enabled: 1
+  commands:
+    - create_command
+    - remove_command
+    - commands
+    - enabled: 1
+  programs:
+    - programs
+    - programs_add
+    - programs_remove
+    - programs_setup
+    - enabled: 1
+    - setup: 0
+    - channel: NULL
