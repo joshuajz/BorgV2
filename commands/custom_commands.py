@@ -4,7 +4,7 @@ from methods.embed import create_embed, add_field
 from methods.database import database_connection, settings_location
 import yaml
 
-# TODO: Add back happyboi command
+# TODO: Fix the happyboi fix, by using None instead of NULL
 
 
 async def create_command(ctx, client):
@@ -16,11 +16,11 @@ async def create_command(ctx, client):
     db = await database_connection(ctx.guild.id)
 
     content = shlex.split(ctx.content, posix=False)
-
-    if len(content) != 3:
+    # x = 3, 4
+    if len(content) != 3 and len(content) != 4:
         embed = create_embed(
             "Create_command",
-            "!create_command {'!command name'} {'description'}",
+            "!create_command {'!command name'} {'description'} {'image (optional)'}",
             "orange",
         )
         add_field(
@@ -32,7 +32,13 @@ async def create_command(ctx, client):
         add_field(
             embed,
             "description",
-            'The actual text provided by the command (ie. "Information can be found here: https://wikipedia.com"',
+            'The actual text provided by the command (ie. "Information can be found here: https://wikipedia.com")',
+            True,
+        )
+        add_field(
+            embed,
+            "image (optional)",
+            "An optional image to display with the command.",
             True,
         )
         example_list = """```
@@ -43,7 +49,7 @@ async def create_command(ctx, client):
         add_field(
             embed,
             "Hint",
-            f'If you want to add multiple lines OR use a space (for example, as Code or as a list.  You\'ll need to use qutoation marks ("").  Example: !create_command !list "Here is a list: "{example_list}"',
+            f'If you want to add multiple lines OR use a space (for example, as Code or as a list.  You\'ll need to use qutoation marks ("").  Example: !create_command !list "Here is a list: {example_list}',
             True,
         )
 
@@ -52,6 +58,13 @@ async def create_command(ctx, client):
 
     command = content[1]
     description = content[2]
+    if len(content) == 3:
+        image = None
+    else:
+        if content[3][0] == '"' and content[3][-1] == '"':
+            image = content[3][1:-1]
+        else:
+            image = content[3]
 
     with open(await settings_location(ctx.guild.id)) as f:
         l = yaml.safe_load(f)
@@ -79,17 +92,15 @@ async def create_command(ctx, client):
         description = description[1:-1]
 
     db["db"].execute(
-        "INSERT INTO custom_commands VALUES (?, ?)",
-        (
-            command,
-            description,
-        ),
+        "INSERT INTO custom_commands VALUES (?, ?, ?)",
+        (command, description, image),
     )
     db["con"].commit()
 
     embed = create_embed("Command Created Successfully.", "", "light_green")
     add_field(embed, "Command", command, True)
     add_field(embed, "Description", description, True)
+    add_field(embed, "Image", image, True)
 
     await ctx.channel.send(embed=embed)
 
@@ -116,6 +127,9 @@ async def remove_command(ctx, client):
 
     command = content[1]
 
+    if command[0] != "!":
+        command = "!" + command
+
     command_list = [
         i for i in db["db"].execute("SELECT * FROM custom_commands").fetchall()
     ]
@@ -130,18 +144,18 @@ async def remove_command(ctx, client):
             embed = create_embed("Command Removed Successfully.", "", "dark_blue")
             add_field(embed, "command", c[0], True)
             add_field(embed, "description", c[1], True)
-
-            await ctx.channel.send(embed=embed)
-
-        else:
-            embed = create_embed(
-                "Error",
-                "Invalid Command to Remove.  Try checking all of the commands with !commands",
-                "red",
-            )
+            add_field(embed, "image", c[2], True)
 
             await ctx.channel.send(embed=embed)
             return
+
+    embed = create_embed(
+        "Error",
+        "Invalid Command to Remove.  Try checking all of the commands with !commands",
+        "red",
+    )
+
+    await ctx.channel.send(embed=embed)
 
 
 async def check_custom_command(ctx, client, command):
@@ -153,7 +167,10 @@ async def check_custom_command(ctx, client, command):
 
     for c in command_list:
         if f"!{command}" == c[0]:
+
             embed = create_embed(f"{command.capitalize()}", f"{c[1]}", "orange")
+            if c[2] != None:
+                embed.set_image(url=c[2])
             await ctx.channel.send(embed=embed)
 
 

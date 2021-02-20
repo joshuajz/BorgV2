@@ -38,16 +38,23 @@ async def create_filesystem(client: discord.Client):
             db.execute(
                 "CREATE TABLE reaction_roles ([role_id] int, [message_id] int, [reaction_id] int, [channel_id] int)"
             )
-
             """db.execute(
                 "CREATE TABLE infractions ([infraction_id] INTEGER PRIMARY KEY, user_id int, type text, reason text, datetime text, time_limit text, active int)"
             )"""
-
             db.execute("CREATE TABLE normal_roles (role_id int, command text)")
-
-            db.execute("CREATE TABLE custom_commands (command text, output text)")
-
+            db.execute(
+                "CREATE TABLE custom_commands (command text, output text, image text)"
+            )
             db.execute("CREATE TABLE programs (user_id text, description text)")
+            db.execute("CREATE TABLE welcome (channel int, message text, enabled bool)")
+            db.execute(
+                "INSERT INTO welcome VALUES (?, ?, ?)",
+                (
+                    None,
+                    None,
+                    False,
+                ),
+            )
 
             db_conn.commit()
 

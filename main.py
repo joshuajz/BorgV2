@@ -28,6 +28,8 @@ command_list = {
     "programs_add": programs_add,
     "programs": programs,
     "programs_remove": programs_remove,
+    # TEMPPPPP
+    "welcome_setup": welcome_setup,
 }
 
 # Bot Instance

@@ -11,7 +11,7 @@ import yaml
 
 # ! REWRITING programs_add w/ a csv
 async def programs_add(ctx, client):
-    content_temp = shlex.split(ctx.content)
+    content_temp = ctx.content.split(" ")
     if len(content_temp) <= 1:
         embed = create_embed(
             "Programs_add",
@@ -154,8 +154,6 @@ async def programs_remove(ctx, client):
         .fetchone()
     )
 
-    print("data", data)
-
     if data is None:
         embed = create_embed(
             "Error",
@@ -186,7 +184,8 @@ async def programs(ctx, client):
         await ctx.channel.send(embed=embed)
         return
 
-    user_id = content[1][3:-1]
+    # user_id = content[1][3:-1]
+    user_id = int("".join([i for i in content[1] if i.isnumeric()]))
 
     db["db"].execute("SELECT * FROM programs WHERE user_id = (?)", (user_id,))
 
@@ -223,7 +222,8 @@ async def programs(ctx, client):
 
 
 async def programs_setup(ctx, client):
-    # TODO: Make sure a user cannot create a new program if they already have one
+    if ctx.author.guild_permissions.administrator != True:
+        return
     content = shlex.split(ctx.content)
     db = await database_connection(ctx.guild.id)
 
