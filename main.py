@@ -30,6 +30,7 @@ command_list = {
     "programs_remove": programs_remove,
     # TEMPPPPP
     "welcome_setup": welcome_setup,
+    "welcome_toggle": welcome_toggle,
 }
 
 # Bot Instance
@@ -75,10 +76,11 @@ async def on_raw_reaction_add(ctx):
 async def on_member_join(ctx):
     #! EDIT
     #! This is very temp
-    welcome_channel = 742523058975145985
-    await client.get_channel(welcome_channel).send(
-        f"Welcome {ctx.mention} to {ctx.guild.name}!  Check out: https://www.notion.so/Waterloo-Admissions-Information-f8e72927a8804021aeafff7baefddcc9 for more information about admissions!"
-    )
+    await welcome_handling(ctx, client)
+    # welcome_channel = 742523058975145985
+    # await client.get_channel(welcome_channel).send(
+    #     f"Welcome {ctx.mention} to {ctx.guild.name}!  Check out: https://www.notion.so/Waterloo-Admissions-Information-f8e72927a8804021aeafff7baefddcc9 for more information about admissions!"
+    # )
 
 
 # Runs the bot with the token in bot_token.txt
