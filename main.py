@@ -31,6 +31,8 @@ command_list = {
     # TEMPPPPP
     "welcome_setup": welcome_setup,
     "welcome_toggle": welcome_toggle,
+    "warn": warn,
+    "userinfo": userinfo,
 }
 
 # Bot Instance
@@ -55,7 +57,7 @@ async def on_message(ctx):
         return
 
     if ctx.content.startswith("!"):
-        command = ctx.content[1::].split(" ")[0]
+        command = ctx.content[1::].split(" ")[0].lower()
         if command in command_list:
             await command_list[command](ctx, client)
         else:

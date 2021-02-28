@@ -55,6 +55,18 @@ async def create_filesystem(client: discord.Client):
                     False,
                 ),
             )
+            db.execute(
+                """CREATE TABLE "infractions" (
+                "id"	INTEGER NOT NULL DEFAULT 0 PRIMARY KEY AUTOINCREMENT,
+                "datetime"	TEXT,
+                "length"	TEXT,
+                "type"	TEXT,
+                "user_id"	INTEGER,
+                "moderator_id"	INTEGER,
+                "reason"	TEXT,
+                "active"    BOOL
+            )"""
+            )
 
             db_conn.commit()
 

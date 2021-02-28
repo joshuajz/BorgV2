@@ -12,7 +12,7 @@ class embedColours(enum.Enum):
 
 
 # Creates an embed object
-def create_embed(title: str, description: str, colour: str):
+def create_embed(title: str, description: str, colour: str, footer="contact"):
     message = discord.Embed(
         title=title,
         description=description,
@@ -20,7 +20,10 @@ def create_embed(title: str, description: str, colour: str):
         timestamp=datetime.datetime.utcnow(),
     )
 
-    message.set_footer(text="Contact JZ#7252 with concerns.")
+    if footer == "contact":
+        message.set_footer(text="Contact JZ#7252 with concerns.")
+    else:
+        message.set_footer(text=footer)
 
     return message
 

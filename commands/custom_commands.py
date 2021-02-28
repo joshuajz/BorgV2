@@ -166,7 +166,7 @@ async def check_custom_command(ctx, client, command):
     ]
 
     for c in command_list:
-        if f"!{command}" == c[0]:
+        if f"!{command.lower()}" == c[0]:
 
             embed = create_embed(f"{command.capitalize()}", f"{c[1]}", "orange")
             if c[2] != None:
