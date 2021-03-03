@@ -57,6 +57,9 @@ async def create_command(ctx, client):
         return
 
     command = content[1]
+    if command[0] == '"' and command[-1] == '"':
+        command = command[1:-1]
+
     description = content[2]
     if len(content) == 3:
         image = None
