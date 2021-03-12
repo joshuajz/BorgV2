@@ -93,7 +93,7 @@ async def programs_add(ctx, client):
 
     mod_channel = ctx.guild.get_channel(int(mod_channel_id))
 
-    embed = create_embed("Verification Required", "", "magenta")
+    embed = create_embed("Programs Verification Required", "", "magenta")
 
     message_programs = "```\n"
     for program in final_content:
@@ -290,13 +290,21 @@ async def program_reaction_handling(ctx, client):
     if ctx.emoji.name == "❌":
         if mod_channel_id == int(ctx.channel_id):
             m = await client.get_channel(ctx.channel_id).fetch_message(ctx.message_id)
-            await m.delete()
-            return True
+            m_embeds = m.embeds[0]
+            if m_embeds.title == "Programs Verification Required":
+                await m.delete()
+                return True
+            else:
+                return False
     elif ctx.emoji.name == "✅":
         if mod_channel_id != int(ctx.channel_id):
             return False
 
         message = await client.get_channel(ctx.channel_id).fetch_message(ctx.message_id)
+        message_embeds = message.embeds[0]
+
+        if message_embeds.title != "Programs Verification Required":
+            return False
 
         embeds = message.embeds[0]
 

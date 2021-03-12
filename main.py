@@ -4,6 +4,9 @@ import traceback
 from commands import *
 from methods.database import create_filesystem, settings_location, database_connection
 import yaml
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Intents
 intents = discord.Intents().default()
@@ -45,6 +48,7 @@ startup_extensions = []
 @client.event
 async def on_ready():
     print(f"Logged in as {client.user}.")
+
     await create_filesystem(client)
 
 
@@ -76,15 +80,8 @@ async def on_raw_reaction_add(ctx):
 
 @client.event
 async def on_member_join(ctx):
-    #! EDIT
-    #! This is very temp
     await welcome_handling(ctx, client)
-    # welcome_channel = 742523058975145985
-    # await client.get_channel(welcome_channel).send(
-    #     f"Welcome {ctx.mention} to {ctx.guild.name}!  Check out: https://www.notion.so/Waterloo-Admissions-Information-f8e72927a8804021aeafff7baefddcc9 for more information about admissions!"
-    # )
 
 
-# Runs the bot with the token in bot_token.txt
-with open("bot_token.txt", "r") as f:
-    client.run(f.readlines()[0])
+# Runs the bot with the token in .env
+client.run(os.environ.get("bot_token"))
