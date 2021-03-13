@@ -1,7 +1,7 @@
 import discord
 import shlex
 from methods.embed import create_embed, add_field
-from methods.database import database_connection, settings_location
+from methods.database import database_connection
 import yaml
 
 # TODO: Fix the happyboi fix, by using None instead of NULL
@@ -69,13 +69,14 @@ async def create_command(ctx, client):
         else:
             image = content[3]
 
-    with open(await settings_location(ctx.guild.id)) as f:
-        l = yaml.safe_load(f)
-        command_list = []
-        for group in l["default_commands"]:
-            for c in l["default_commands"][group]:
-                if type(c) == str:
-                    command_list.append(c)
+    #! settings_location
+    # with open(await settings_location(ctx.guild.id)) as f:
+    #     l = yaml.safe_load(f)
+    #     command_list = []
+    #     for group in l["default_commands"]:
+    #         for c in l["default_commands"][group]:
+    #             if type(c) == str:
+    #                 command_list.append(c)
 
     command_list += [
         i[0][1::]

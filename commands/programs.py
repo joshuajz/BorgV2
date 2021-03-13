@@ -1,8 +1,9 @@
 import discord
-from methods.database import database_connection, settings_location
+from methods.database import database_connection
 import shlex
 from methods.embed import create_embed, add_field
 import yaml
+import re
 
 # TODO: Editing
 
@@ -12,7 +13,7 @@ import yaml
 # ! REWRITING programs_add w/ a csv
 async def programs_add(ctx, client):
     content_temp = ctx.content.split(" ")
-    if len(content_temp) <= 1:
+    if len(ctx.content.split(" ")) <= 1 and len(ctx.content.split("\n")) <= 1:
         embed = create_embed(
             "Programs_add",
             "!programs_add {user (optional, admin only)} Program #1, Program #2, Program #3...",
@@ -33,91 +34,96 @@ async def programs_add(ctx, client):
             True,
         )
 
+        add_field(embed, "Example", "!programs_add UW - CS, UW - SE", True)
+
         await ctx.channel.send(embed=embed)
         return
 
-    content = ctx.content.split("!programs_add")[1][1::]
-
-    if content[0:3] == "<@!":
-        if ctx.author.guild_permissions.administrator == True:
-            user_id = int(content[3:21])
-
-        content = list(content)
-        content[0:23] = ""
-        content = "".join(content)
-    else:
-        user_id = int(ctx.author.id)
-
-    content = content.split(",")
-
-    final_content = []
-    for c in content:
-        c = list(c)
-        if c[0] == " ":
-            c[0] = ""
-        if c[-1] == " ":
-            c[-1] = ""
-        c = "".join(c)
-        final_content.append(c)
-
     db = await database_connection(ctx.guild.id)
 
-    data = (
-        db["db"]
-        .execute("SELECT user_id FROM programs WHERE user_id = (?)", (int(user_id),))
-        .fetchone()
+    programs_channel = (
+        db["db"].execute("SELECT programs_channel FROM settings").fetchone()[0]
     )
 
-    if data is not None:
+    if programs_channel is None:
         embed = create_embed(
             "Error",
-            "The user already has a !programs associated with them.  First use !programs_remove.",
+            "The admins have not setup !programs.  Ask them to run !programs_setup.",
             "red",
         )
         await ctx.channel.send(embed=embed)
         return
 
-    with open(await settings_location(ctx.guild.id)) as f:
-        l = yaml.safe_load(f)
+    programs_channel = int(programs_channel)
 
-        mod_channel_id = l["default_commands"]["programs"][6]["channel"]
+    content = "".join(list(ctx.content)[14::])
 
-        if mod_channel_id is None:
-            embed = create_embed(
-                "Error",
-                "The admins have not setup !programs.  Ask them to run !programs_setup.",
-                "red",
-            )
-            await ctx.channel.send(embed=embed)
-            return
+    add_programs = []
 
-    mod_channel = ctx.guild.get_channel(int(mod_channel_id))
+    if content[0:3] == "<@!":
+        if ctx.author.guild_permissions.administrator == True:
+            user_id = int(content[3:21])
+        else:
+            user_id = ctx.author.id
+
+        content = content[23::]
+    else:
+        user_id = ctx.author.id
+
+    user_id = int(user_id)
+
+    if "\n" in content:
+        for program in content.split("\n"):
+            add_programs.append(program.strip())
+        temp_list = []
+        if "," in "".join(add_programs):
+            for program in add_programs:
+                if "," in program:
+                    for p in program.split(","):
+                        temp_list.append(p)
+                else:
+                    temp_list.append(program)
+
+        add_programs = temp_list
+    else:
+        for program in content.split(","):
+            add_programs.append(program.strip())
+
+    current_programs = (
+        db["db"]
+        .execute("SELECT description FROM programs WHERE user_id = (?)", (user_id,))
+        .fetchone()
+    )
 
     embed = create_embed("Programs Verification Required", "", "magenta")
+    add_field(embed, "User", client.get_user(user_id).mention, False)
+    clist = ""
+    if current_programs is not None:
+        for p in current_programs[0].split("\n"):
+            if p != "":
+                clist += p + "\n"
 
-    message_programs = "```\n"
-    for program in final_content:
-        message_programs += program + "\n"
-    message_programs += "```"
+        add_field(embed, "Current Programs", clist, True)
+    plist = ""
+    for p in add_programs:
+        plist += p + "\n"
 
-    add_field(embed, "User", client.get_user(int(user_id)).mention, False)
-    add_field(embed, "Programs", message_programs, True)
-    add_field(embed, "List Version", str(final_content), True)
+    add_field(embed, "Program Additions", plist, True)
+    add_field(embed, "Final Programs", clist + plist, True)
 
-    verify_message = await mod_channel.send(embed=embed)
+    verification_msg = await client.get_channel(programs_channel).send(embed=embed)
 
     emojis = ["✅", "❌"]
     for emoji in emojis:
-        await verify_message.add_reaction(emoji)
+        await verification_msg.add_reaction(emoji)
 
     embed = create_embed(
         "Successfully Sent to Moderators",
-        "Your !programs command has been sent to the administrators of the server for review.  Please sit tight!",
+        "Your !programs additions have been sent to the administrators for review.  Please sit tight!",
         "light_green",
     )
-    add_field(embed, "User", client.get_user(int(user_id)).mention, False)
-
-    add_field(embed, "Programs", message_programs, True)
+    add_field(embed, "User", client.get_user(int(user_id)).mention, True)
+    add_field(embed, "Added Programs", plist, True)
     await ctx.channel.send(embed=embed)
 
 
@@ -125,6 +131,10 @@ async def programs_remove(ctx, client):
     content = shlex.split(ctx.content)
 
     db = await database_connection(ctx.guild.id)
+    if len(content) <= 1:
+        embed = create_embed("Programs_remove", "!programs_remove", "red")
+        await ctx.channel.send(embed=embed)
+
     if len(content) == 1:
         user_id = ctx.author.id
     elif len(content) == 2:
@@ -200,18 +210,12 @@ async def programs(ctx, client):
         await ctx.channel.send(embed=embed)
         return
 
-    programs = eval(
-        (
-            db["db"]
-            .execute("SELECT description FROM programs WHERE user_id = (?)", (user_id,))
-            .fetchall()[0][0]
-        )
-    )
+    programs = user_data[1].split("\n")
 
     message = "```\n"
-    for program in programs:
-        temp = program + "\n"
-        message += temp
+    for program in range(len(programs)):
+        if programs[program] != "":
+            message += f"{program + 1}. {programs[program]}\n"
     message += "```"
 
     embed = create_embed(f"Programs", "", "orange")
@@ -260,14 +264,8 @@ async def programs_setup(ctx, client):
             await ctx.channel.send(embed=embed)
             return
 
-    with open(await settings_location(ctx.guild.id)) as f:
-        l = yaml.safe_load(f)
-
-        l["default_commands"]["programs"][5]["setup"] = 1
-        l["default_commands"]["programs"][6]["channel"] = channel_id
-
-        with open(await settings_location(ctx.guild.id), "w") as ff:
-            yaml.dump(l, ff)
+    db["db"].execute("UPDATE settings SET programs_channel = (?)", (channel_id,))
+    db["con"].commit()
 
     embed = create_embed("Programs Setup Successfully", "", "light_green")
     add_field(
@@ -278,58 +276,62 @@ async def programs_setup(ctx, client):
 
 async def program_reaction_handling(ctx, client):
     db = await database_connection(ctx.guild_id)
-    with open(await settings_location(ctx.guild_id)) as f:
-        l = yaml.safe_load(f)
 
-        mod_channel_id = int(l["default_commands"]["programs"][6]["channel"])
-
-    # Programs isn't setup
+    mod_channel_id = (
+        db["db"].execute("SELECT programs_channel FROM settings").fetchone()[0]
+    )
     if mod_channel_id is None:
         return False
 
+    mod_channel_id = int(mod_channel_id)
+
+    m = await client.get_channel(ctx.channel_id).fetch_message(ctx.message_id)
+    m_embeds = m.embeds[0]
+
+    if m.embeds[0].title != "Programs Verification Required":
+        return
+
+    if mod_channel_id != int(ctx.channel_id):
+        return
+
     if ctx.emoji.name == "❌":
-        if mod_channel_id == int(ctx.channel_id):
-            m = await client.get_channel(ctx.channel_id).fetch_message(ctx.message_id)
-            m_embeds = m.embeds[0]
-            if m_embeds.title == "Programs Verification Required":
-                await m.delete()
-                return True
-            else:
-                return False
+        await m.delete()
+        return True
     elif ctx.emoji.name == "✅":
-        if mod_channel_id != int(ctx.channel_id):
-            return False
-
-        message = await client.get_channel(ctx.channel_id).fetch_message(ctx.message_id)
-        message_embeds = message.embeds[0]
-
-        if message_embeds.title != "Programs Verification Required":
-            return False
-
-        embeds = message.embeds[0]
-
-        for embed in embeds.fields:
-            if embed.name == "List Version":
-                programs_raw = embed.value
+        programs = None
+        user_id = None
+        for embed in m_embeds.fields:
+            print(embed.name)
+            if embed.name == "Final Programs":
+                programs = embed.value
             elif embed.name == "User":
                 user_id = int(embed.value[2:-1])
-            elif embed.name == "Programs":
-                programs_message = embed.value
 
-        programs_list = eval(programs_raw)
-
-        if programs_list and user_id:
-            db["db"].execute(
-                "INSERT INTO programs VALUES (?, ?)", (user_id, str(programs_list))
-            )
+        if programs and user_id:
+            if (
+                db["db"]
+                .execute(
+                    "SELECT COUNT(user_id) FROM programs WHERE user_id = (?)",
+                    (user_id,),
+                )
+                .fetchone()[0]
+                > 0
+            ):
+                db["db"].execute(
+                    "UPDATE programs SET description = ? WHERE user_id = ?",
+                    (programs, int(user_id)),
+                )
+            else:
+                db["db"].execute(
+                    "INSERT INTO programs (user_id, description) VALUES (?, ?) ",
+                    (int(user_id), programs),
+                )
             db["con"].commit()
 
-        await message.delete()
+        await m.delete()
 
-        # Send a DM to the user
         user = client.get_user(user_id)
         dm_channel = user.dm_channel
-
         if dm_channel is None:
             await user.create_dm()
             dm_channel = user.dm_channel
@@ -337,10 +339,10 @@ async def program_reaction_handling(ctx, client):
         embed = create_embed(
             "!Programs Command Created Successfully", "", "light_green"
         )
-        add_field(embed, "Programs", programs_message, True)
+        add_field(embed, "Programs", programs, True)
 
         await dm_channel.send(embed=embed)
 
         return True
-    else:
-        return False
+
+    return False

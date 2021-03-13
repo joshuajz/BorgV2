@@ -2,7 +2,7 @@ import discord
 import os
 import traceback
 from commands import *
-from methods.database import create_filesystem, settings_location, database_connection
+from methods.database import create_filesystem, database_connection
 import yaml
 from dotenv import load_dotenv
 
@@ -60,8 +60,20 @@ async def on_message(ctx):
     if ctx.author == client.user:
         return
 
+    # Potential regex: (?<=^!)(\w*)
+
     if ctx.content.startswith("!"):
-        command = ctx.content[1::].split(" ")[0].lower()
+        if "\n" in ctx.content:
+            command = (
+                ctx.content.split("\n")[0]
+                .split(" ")[0]
+                .strip()
+                .replace("!", "")
+                .lower()
+            )
+        else:
+            command = ctx.content[1::].split(" ")[0].lower().strip().lower()
+
         if command in command_list:
             await command_list[command](ctx, client)
         else:

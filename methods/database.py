@@ -35,27 +35,12 @@ async def create_filesystem(client: discord.Client):
             db_conn = sqlite3.connect(f"{SERVERS_DIR}/{guild}/database.db")
             db = db_conn.cursor()
 
-            db.execute(
-                "CREATE TABLE reaction_roles ([role_id] int, [message_id] int, [reaction_id] int, [channel_id] int)"
-            )
-            """db.execute(
-                "CREATE TABLE infractions ([infraction_id] INTEGER PRIMARY KEY, user_id int, type text, reason text, datetime text, time_limit text, active int)"
-            )"""
-            db.execute("CREATE TABLE normal_roles (role_id int, command text)")
-            db.execute(
-                "CREATE TABLE custom_commands (command text, output text, image text)"
-            )
-            db.execute("CREATE TABLE programs (user_id text, description text)")
-            db.execute("CREATE TABLE welcome (channel int, message text, enabled bool)")
-            db.execute(
-                "INSERT INTO welcome VALUES (?, ?, ?)",
-                (
-                    None,
-                    None,
-                    False,
-                ),
-            )
-            db.execute(
+            db_commands = [
+                "CREATE TABLE reaction_roles ([role_id] int, [message_id] int, [reaction_id] int, [channel_id] int)",
+                "CREATE TABLE normal_roles (role_id int, command text)",
+                "CREATE TABLE custom_commands (command text, output text, image text)",
+                "CREATE TABLE programs (user_id text, description text)",
+                "CREATE TABLE welcome (channel int, message text, enabled bool)",
                 """CREATE TABLE "infractions" (
                 "id"	INTEGER NOT NULL DEFAULT 0 PRIMARY KEY AUTOINCREMENT,
                 "datetime"	TEXT,
@@ -64,16 +49,24 @@ async def create_filesystem(client: discord.Client):
                 "user_id"	INTEGER,
                 "moderator_id"	INTEGER,
                 "reason"	TEXT,
-                "active"    BOOL
-            )"""
+                "active"    BOOL)""",
+                "CREATE TABLE settings (programs_channel text)",
+            ]
+
+            for command in db_commands:
+                db.execute(command)
+
+            db.execute(
+                "INSERT INTO welcome VALUES (?, ?, ?)",
+                (
+                    None,
+                    None,
+                    False,
+                ),
             )
+            db.execute("INSERT INTO settings VALUES (?)", (None,))
 
             db_conn.commit()
-
-        if "settings.yml" not in l_dir:
-            copyfile(
-                f"{DEFAULT_DIR}/settings.yml", f"{SERVERS_DIR}/{guild}/settings.yml"
-            )
 
 
 async def database_connection(guild: int):
@@ -89,7 +82,3 @@ async def database_connection(guild: int):
     db = db_connection.cursor()
 
     return {"con": db_connection, "db": db}
-
-
-async def settings_location(guild: int):
-    return f"{SERVERS_DIR}/{guild}/settings.yml"
