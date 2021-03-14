@@ -39,7 +39,7 @@ async def create_filesystem(client: discord.Client):
                 "CREATE TABLE reaction_roles ([role_id] int, [message_id] int, [reaction_id] int, [channel_id] int)",
                 "CREATE TABLE normal_roles (role_id int, command text)",
                 "CREATE TABLE custom_commands (command text, output text, image text)",
-                "CREATE TABLE programs (user_id text, description text)",
+                "CREATE TABLE programs (user_id int, description text)",
                 "CREATE TABLE welcome (channel int, message text, enabled bool)",
                 """CREATE TABLE "infractions" (
                 "id"	INTEGER NOT NULL DEFAULT 0 PRIMARY KEY AUTOINCREMENT,

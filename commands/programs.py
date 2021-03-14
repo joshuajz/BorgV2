@@ -135,7 +135,46 @@ async def programs_remove(ctx, client):
         embed = create_embed("Programs_remove", "!programs_remove", "red")
         await ctx.channel.send(embed=embed)
 
-    if len(content) == 1:
+    content = ctx.content.split("!programs_remove")[1]
+
+    if content.strip()[0:3] == "<@!":
+        if ctx.author.guild_permissions.administrator:
+            user_id = int(content.strip()[3:21])
+        else:
+            user_id = ctx.author.id
+        content = content.strip()[22::]
+    else:
+        user_id = ctx.author.id
+
+    remove_list = []
+    if "\n" in content:
+        for i in content.split("\n"):
+            if "," in i:
+                for z in i.split(","):
+                    remove_list.append(int(z.strip()))
+            else:
+                remove_list.append(int(i.strip()))
+    elif "," in content:
+        for i in content.split(","):
+            remove_list.append(int(i.strip()))
+
+    # Remove duplicates
+    remove_list = list(dict.fromkeys(remove_list))
+
+    programs_raw = (
+        db["db"]
+        .execute("SELECT description FROM programs WHERE user_id = (?)", (user_id,))
+        .fetchone()[0]
+        .split("\n")
+    )
+
+    programs = {}
+    i = 1
+    for p in programs_raw:
+        programs[i] = p
+        i += 1
+
+    """if len(content) == 1:
         user_id = ctx.author.id
     elif len(content) == 2:
         if ctx.author.guild_permissions.administrator != True:
@@ -178,7 +217,7 @@ async def programs_remove(ctx, client):
 
     embed = create_embed("Programs Removed Successfully", "", "dark_blue")
     await ctx.channel.send(embed=embed)
-    return
+    return"""
 
 
 async def programs(ctx, client):
