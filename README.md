@@ -10,9 +10,6 @@ A discord bot with various commands created specificlly for University Applicant
   - [sqlite database](https://www.sqlite.org/index.html)
 The full list can be found in the requirements.txt file.
 
-### Installing Pre-requisits
-- python: [link](https://www.python.org/downloads/)
-
 ### Setting up a testing environment:
 
 1. Clone the repository
