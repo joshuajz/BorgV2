@@ -1,8 +1,5 @@
 # BorgV2
 
-## Table of Contents
-- [Table of Contents](#table-of-contents)
-
 ### About the Project
 A discord bot with various commands created specificlly for University Applicant servers, but can be used on any discord server.  Some noteable commands include a !programs command, to allow users to display the universities and programs they're applying to.  It also has custom commands that administrators of the server can create to display information.
 
